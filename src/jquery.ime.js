@@ -200,7 +200,8 @@
 
 		load: function ( name, callback ) {
 			var ime = this,
-				dependency;
+				dependency,
+				runtimeOrExtension;
 
 			if ( $.ime.inputmethods[name] ) {
 				if ( callback ) {
@@ -215,17 +216,22 @@
 				this.load( dependency ) ;
 			}
 
-			$.ajax( {
-				url: ime.options.imePath + $.ime.sources[name].source,
-				dataType: 'script'
-			} ).done( function () {
-				debug( name + ' loaded' );
+			// Determining which method the Google Chrome is using.
+			// Until Chrome version 25 message passing between content scripts and 
+			// extension scripts was implemented using chrome.extension.sendmessage. 
+			// From version 26 onwards it is implemented using chrome.runtime.sendmessage.
+			runtimeOrExtension = chrome.runtime && chrome.runtime.sendMessage ? 'runtime' : 'extension';
 
-				if ( callback ) {
-					callback.call( ime );
+			chrome[runtimeOrExtension].sendMessage( {fileToInject: $.ime.sources[name].source}, function ( response ) {
+				if ( response.injected ) {
+					debug( name + ' loaded' );
+					if ( callback ) {
+						callback.call( ime );
+					}
 				}
-			} ).fail( function ( jqxhr, settings, exception ) {
-				debug( 'Error in loading inputmethod ' + name + ' Exception: ' + exception );
+				else {
+					debug( 'Error in loading inputmethod ' + name + ' Error: ' + response.errorMessage );
+				}
 			} );
 		},
 
