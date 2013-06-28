@@ -15,7 +15,7 @@
 <link href="demo.css" rel="stylesheet" />
 <script>
 	$( document ).ready( function () {
-		$( 'input,textarea' ).ime();
+		$( 'input,textarea, .contenteditable-div' ).ime();
 	} );
 </script>
 </head>
@@ -30,6 +30,10 @@
 		</div>
 		<div>
 			<textarea></textarea>
+		</div>
+
+		<div class="contenteditable-div" contenteditable>
+			This is a contenteditable div
 		</div>
 
 		<footer>

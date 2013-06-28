@@ -332,6 +332,30 @@
 		if ( typeof el.selectionStart === 'number' && typeof el.selectionEnd === 'number' ) {
 			start = el.selectionStart;
 			end = el.selectionEnd;
+		} else if ( el.contentEditable !== null ) {
+			// Element is contentEditable
+			var caretOffset = 0;
+		    if ( typeof window.getSelection != "undefined" ) {
+		        var range = window.getSelection().getRangeAt(0);
+		        var preCaretRange = range.cloneRange();
+		        preCaretRange.selectNodeContents( el );
+		        preCaretRange.setEnd( range.endContainer, range.endOffset );
+		        caretOffset = preCaretRange.toString().length;
+		        if ( range.collapsed ) {
+		        	start = caretOffset;
+		        	end = caretOffset;
+		        }
+		        else {
+		        	end = caretOffset;
+		        	start = caretOffset - ( range.endOffset - range.startOffset );
+		        }
+		    } else if ( typeof document.selection != "undefined" && document.selection.type != "Control" ) {
+		        var textRange = document.selection.createRange();
+		        var preCaretTextRange = document.body.createTextRange();
+		        preCaretTextRange.moveToElementText( el );
+		        preCaretTextRange.setEndPoint( "EndToEnd", textRange );
+		        caretOffset = preCaretTextRange.text.length;
+		    }
 		} else {
 			// IE
 			range = document.selection.createRange();
@@ -407,6 +431,26 @@
 			element.scrollTop = scrollTop;
 			// set selection
 			element.selectionStart = element.selectionEnd = start + replacement.length;
+		} else if ( element.contentEditable !== null ) {
+
+			element.textContent = element.textContent.substring( 0, start ) + replacement
+					+ element.textContent.substring( end, element.textContent.length );
+			var sel, range;
+			if ( window.getSelection ) {
+				sel = window.getSelection();
+				if ( sel.rangeCount > 0 ) {
+					var textNode = sel.focusNode;
+					var newOffset = start + replacement.length;
+					sel.collapse( textNode, newOffset );
+				}
+			} else if ( ( sel = window.document.selection ) ) {
+				if ( sel.type != "Control" ) {
+				    range = sel.createRange();
+				    range.move( "character", charCount );
+				    range.select();
+				}
+		    }
+
 		} else {
 			// IE8 and lower
 			selection = rangeForElementIE(element);
