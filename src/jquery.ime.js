@@ -184,8 +184,9 @@
 		},
 
 		setLanguage: function ( languageCode ) {
-			if ( !( languageCode in $.ime.languages ) ) {
+			if ( !$.ime.languages[languageCode] ) {
 				debug( 'Language ' + languageCode + ' is not known to jquery.ime.' );
+
 				return false;
 			}
 
