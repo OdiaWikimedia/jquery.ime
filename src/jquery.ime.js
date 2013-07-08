@@ -184,10 +184,10 @@
 		},
 
 		setLanguage: function ( languageCode ) {
-			// if ( $.inArray( languageCode, this.options.languages ) === -1 ) {
-			// 	debug( 'Language ' + languageCode + ' is not known to jquery.ime.' );
-			// 	return false;
-			// }
+			if ( !( languageCode in $.ime.languages ) ) {
+				debug( 'Language ' + languageCode + ' is not known to jquery.ime.' );
+				return false;
+			}
 
 			this.language = languageCode;
 			$.ime.preferences.setLanguage( languageCode );
