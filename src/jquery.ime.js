@@ -1,6 +1,12 @@
 ( function ( $ ) {
 	'use strict';
 
+	/**
+	 * IME Class
+	 * @param {Function} [options.helpHandler] Called for each input method row in the selector
+	 * @param {Object} options.helpHandler.imeSelector
+	 * @param {String} options.helpHandler.ime Id of the input method
+	 */
 	function IME( element, options ) {
 		this.$element = $( element );
 		// This needs to be delayed here since extending language list happens at DOM ready
@@ -17,6 +23,9 @@
 	IME.prototype = {
 		constructor: IME,
 
+		/**
+		 * Listen for events and bind to handlers
+		 */
 		listen: function () {
 			this.$element.on( 'keypress.ime', $.proxy( this.keypress, this ) );
 			this.$element.on( 'destroy.ime', $.proxy( this.destroy, this ) );
@@ -28,10 +37,10 @@
 		 * Transliterate a given string input based on context and input method definition.
 		 * If there are no matching rules defined, returns the original string.
 		 *
-		 * @param input
-		 * @param context
-		 * @param altGr bool whether altGr key is pressed or not
-		 * @returns String transliterated string
+		 * @param {string} input
+		 * @param {string} context
+		 * @param {boolean} altGr whether altGr key is pressed or not
+		 * @returns {string} transliterated string
 		 */
 		transliterate: function ( input, context, altGr ) {
 			var patterns, regex, rule, replacement, i;
@@ -73,6 +82,11 @@
 			return input;
 		},
 
+		/**
+		 * Keypress handler
+		 * @param {jQuery.Event} e Event
+		 * @returns {Boolean}
+		 */
 		keypress: function ( e ) {
 			var altGr = false,
 				c, startPos, pos, endPos, divergingPos, input, replacement;
@@ -96,9 +110,9 @@
 				altGr = true;
 			}
 
-			// Don't process ASCII control characters (except linefeed),
-			// as well as anything involving
-			// Alt (except for extended keymaps), Ctrl and Meta
+			// Don't process ASCII control characters except linefeed,
+			// as well as anything involving Ctrl, Meta and Alt,
+			// but do process extended keymaps
 			if ( ( e.which < 32 && e.which !== 13 && !altGr ) || e.ctrlKey || e.metaKey ) {
 				// Blank the context
 				this.context = '';
@@ -118,9 +132,11 @@
 			// Get the last few characters before the one the user just typed,
 			// to provide context for the transliteration regexes.
 			// We need to append c because it hasn't been added to $this.val() yet
-			input = this.lastNChars( this.$element.val() || this.$element.text(), startPos,
-					this.inputmethod.maxKeyLength )
-					+ c;
+			input = this.lastNChars(
+				this.$element.val() || this.$element.text(),
+				startPos,
+				this.inputmethod.maxKeyLength
+			) + c;
 
 			replacement = this.transliterate( input, this.context, altGr );
 
@@ -129,8 +145,9 @@
 
 			if ( this.context.length > this.inputmethod.contextLength ) {
 				// The buffer is longer than needed, truncate it at the front
-				this.context = this.context.substring( this.context.length
-						- this.inputmethod.contextLength );
+				this.context = this.context.substring(
+					this.context.length - this.inputmethod.contextLength
+				);
 			}
 
 			// If replacement equals to input, no replacement is made, because
@@ -152,37 +169,66 @@
 			return false;
 		},
 
+		/**
+		 * Check whether the input method is active or not
+		 * @returns {Boolean}
+		 */
 		isActive: function () {
 			return this.active;
 		},
 
+		/**
+		 * Disable the input method
+		 */
 		disable: function () {
 			this.active = false;
 			$.ime.preferences.setIM( 'system' );
 		},
 
+		/**
+		 * Enable the input method
+		 */
 		enable: function () {
 			this.active = true;
 		},
 
+		/**
+		 * Toggle the active state of input method
+		 */
 		toggle: function () {
 			this.active = !this.active;
 		},
 
+		/**
+		 * Destroy the binding of ime to the editable element
+		 */
 		destroy: function () {
 			$( 'body' ).off( '.ime' );
 			this.$element.off( '.ime' ).removeData( 'ime' ).removeData( 'imeselector' );
 		},
 
+		/**
+		 * Get the current input method
+		 * @returns {string} Current input method id
+		 */
 		getIM: function () {
 			return this.inputmethod;
 		},
 
+		/**
+		 * Set the current input method
+		 * @param {string} inputmethodId
+		 */
 		setIM: function ( inputmethodId ) {
 			this.inputmethod = $.ime.inputmethods[inputmethodId];
 			$.ime.preferences.setIM( inputmethodId );
 		},
 
+		/**
+		 * Set the current Language
+		 * @param {string} languageCode
+		 * @returns {Boolean}
+		 */
 		setLanguage: function ( languageCode ) {
 			if ( !$.ime.languages[languageCode] ) {
 				debug( 'Language ' + languageCode + ' is not known to jquery.ime.' );
@@ -195,26 +241,32 @@
 			return true;
 		},
 
+		/**
+		 * Get current language
+		 * @returns {string}
+		 */
 		getLanguage: function () {
 			return this.language;
 		},
 
-		load: function ( name, callback ) {
+		/**
+		 * load an input method by given id
+		 * @param {string} inputmethodId
+		 * @return {jQuery.Promise}
+		 */
+		load: function ( inputmethodId ) {
 			var ime = this,
+				deferred = $.Deferred(),
 				dependency,
 				runtimeOrExtension;
 
-			if ( $.ime.inputmethods[name] ) {
-				if ( callback ) {
-					callback.call( ime );
-				}
-
-				return true;
+			if ( $.ime.inputmethods[inputmethodId] ) {
+				return deferred.resolve();
 			}
 
-			dependency = $.ime.sources[name].depends;
+			dependency = $.ime.sources[inputmethodId].depends;
 			if ( dependency ) {
-				this.load( dependency ) ;
+				return $.when( this.load( dependency ), this.load( inputmethodId ) );
 			}
 
 			// Determining which method the Google Chrome is using.
@@ -234,10 +286,15 @@
 					debug( 'Error in loading inputmethod ' + name + ' Error: ' + response.errorMessage );
 				}
 			} );
+
+			return deferred.promise();
 		},
 
-		// Returns an array [start, end] of the beginning
-		// and the end of the current selection in $element
+		/**
+		 * Returns an array [start, end] of the beginning
+		 * and the end of the current selection in $element
+		 * @returns {Array}
+		 */
 		getCaretPosition: function ( $element ) {
 			return getCaretPosition( $element );
 		},
@@ -268,6 +325,10 @@
 		}
 	};
 
+	/**
+	 * jQuery plugin ime
+	 * @param {Object} option
+	 */
 	$.fn.ime = function ( option ) {
 		return this.each( function () {
 			var data,
@@ -313,18 +374,23 @@
 	// default options
 	$.ime.defaults = {
 		imePath: '../', // Relative/Absolute path for the rules folder of jquery.ime
-		languages: [] // Languages to be used- by default all languages
+		languages: [], // Languages to be used- by default all languages
+		helpHandler: null // Called for each ime option in the menu
 	};
 
-	// private function for debugging
+	/**
+	 * private function for debugging
+	 */
 	function debug( $obj ) {
 		if ( window.console && window.console.log ) {
 			window.console.log( $obj );
 		}
 	}
 
-	// Returns an array [start, end] of the beginning
-	// and the end of the current selection in $element
+	/**
+	 * Returns an array [start, end] of the beginning
+	 * and the end of the current selection in $element
+	 */
 	function getCaretPosition( $element ) {
 		var el = $element.get( 0 ),
 			start = 0,
@@ -475,7 +541,7 @@
 		}
 	}
 
-	function arrayKeys ( obj ) {
+	function arrayKeys( obj ) {
 		var rv = [];
 		$.each( obj, function ( key ) {
 			rv.push( key );

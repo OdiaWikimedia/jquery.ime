@@ -79,13 +79,13 @@
 		focus: function () {
 			// Hide all other IME settings and collapse open menus
 			$( 'div.imeselector' ).hide();
-			$( 'div.imeselector-menu' ).removeClass( 'open' );
+			$( 'div.imeselector-menu' ).removeClass( 'ime-open' );
 			this.$imeSetting.show();
 			this.resetTimer();
 		},
 
 		show: function () {
-			this.$menu.addClass( 'open' );
+			this.$menu.addClass( 'ime-open' );
 			this.stopTimer();
 			this.$imeSetting.show();
 
@@ -93,14 +93,14 @@
 		},
 
 		hide: function () {
-			this.$menu.removeClass( 'open' );
+			this.$menu.removeClass( 'ime-open' );
 			this.resetTimer();
 
 			return false;
 		},
 
 		toggle: function () {
-			if ( this.$menu.hasClass( 'open' ) ) {
+			if ( this.$menu.hasClass( 'ime-open' ) ) {
 				this.hide();
 			} else {
 				this.show();
@@ -124,7 +124,7 @@
 			} );
 
 			imeselector.$element.on( 'blur.ime', function () {
-				if ( !imeselector.$imeSetting.hasClass( 'onfocus' ) ) {
+				if ( !imeselector.$imeSetting.hasClass( 'ime-onfocus' ) ) {
 					imeselector.$imeSetting.hide();
 					imeselector.hide();
 				}
@@ -134,10 +134,10 @@
 				// We don't want the selector to disappear
 				// while the user is trying to click it
 				imeselector.stopTimer();
-				imeselector.$imeSetting.addClass( 'onfocus' );
+				imeselector.$imeSetting.addClass( 'ime-onfocus' );
 			} ).mouseleave( function () {
 				imeselector.resetTimer();
-				imeselector.$imeSetting.removeClass( 'onfocus' );
+				imeselector.$imeSetting.removeClass( 'ime-onfocus' );
 			} );
 
 			imeselector.$menu.on( 'click.ime', 'li', function() {
@@ -274,7 +274,7 @@
 				// Flip the menu to the top only if it can fit in the space there
 				if ( menutop < top ) {
 					this.$menu
-						.addClass( 'position-top' )
+						.addClass( 'ime-position-top' )
 						.css( 'top', -menutop );
 				}
 			}
@@ -297,11 +297,11 @@
 				if ( this.$element.css( 'direction' ) === 'rtl' ) {
 					this.$menu
 					.css( 'left', 0 )
-					.addClass( 'left' );
+					.addClass( 'ime-left' );
 				} else {
 					this.$menu
 					.css( 'left', position.left )
-					.addClass( 'right' );
+					.addClass( 'ime-right' );
 				}
 			}
 		},
@@ -378,10 +378,10 @@
 				return;
 			}
 
-			this.$menu.find( '.checked' ).removeClass( 'checked' );
-			this.$menu.find( 'li.ime-disable' ).removeClass( 'checked' );
+			this.$menu.find( '.ime-checked' ).removeClass( 'ime-checked' );
+			this.$menu.find( 'li.ime-disable' ).removeClass( 'ime-checked' );
 			this.$menu.find( 'li[data-ime-inputmethod=' + inputmethodId + ']' )
-				.addClass( 'checked' );
+				.addClass( 'ime-checked' );
 			ime = this.$element.data( 'ime' );
 
 			if ( inputmethodId === 'system' ) {
@@ -390,13 +390,13 @@
 				return;
 			}
 
-			ime.load( inputmethodId, function () {
+			ime.load( inputmethodId ).done( function () {
 				imeselector.inputmethod = $.ime.inputmethods[inputmethodId];
 				imeselector.hide();
 				ime.enable();
 				ime.setIM( inputmethodId );
 				imeselector.$imeSetting.find( 'a.ime-name' ).text(
-					imeselector.inputmethod.name
+					$.ime.sources[inputmethodId].name
 				);
 
 				imeselector.position();
@@ -410,8 +410,8 @@
 		 * Disable the inputmethods (Use the system input method)
 		 */
 		disableIM: function () {
-			this.$menu.find( '.checked' ).removeClass( 'checked' );
-			this.$menu.find( 'div.ime-disable' ).addClass( 'checked' );
+			this.$menu.find( '.ime-checked' ).removeClass( 'ime-checked' );
+			this.$menu.find( 'div.ime-disable' ).addClass( 'ime-checked' );
 			this.$element.data( 'ime' ).disable();
 			this.$imeSetting.find( 'a.ime-name' ).text( '' );
 			this.hide();
@@ -453,8 +453,11 @@
 					continue;
 				}
 
-				$languageItem = $( '<a>' ).attr( 'href', '#' ).text( language.autonym );
-				$language = $( '<li class="ime-lang">' ).attr( 'lang', languageCode );
+				$languageItem = $( '<a>' )
+					.attr( 'href', '#' )
+					.text( language.autonym )
+					.addClass( 'selectable-row-item' );
+				$language = $( '<li class="ime-lang selectable-row">' ).attr( 'lang', languageCode );
 				$language.append( $languageItem );
 				$languageList.append( $language );
 			}
@@ -470,32 +473,41 @@
 		/**
 		 * Prepare input methods in menu for the given language code
 		 *
-		 * @param languageCode
+		 * @param {String} languageCode
 		 */
 		prepareInputMethods: function ( languageCode ) {
 			var language = $.ime.languages[languageCode],
-				$imeList = this.$menu.find( '.ime-list' );
+				$imeList = this.$menu.find( '.ime-list' ),
+				imeSelector = this;
 
 			$imeList.empty();
 
 			$.each( language.inputmethods, function ( index, inputmethod ) {
-				var name = $.ime.sources[inputmethod].name,
-					$imeItem = $( '<a>' ).attr( 'href', '#' ).text( name ),
-					$inputMethod = $( '<li data-ime-inputmethod=' + inputmethod + '>' );
+				var $imeItem, $inputMethod,
+					name = $.ime.sources[inputmethod].name;
 
-				$inputMethod
-					.append(
-						'<span class="ime-im-check">',
-						$imeItem
-					)
-					.addClass( 'ime-im' );
+				$imeItem = $( '<a>' )
+					.attr( 'href', '#' )
+					.text( name )
+					.addClass( 'selectable-row-item' );
+
+				$inputMethod = $( '<li>' )
+					.attr( 'data-ime-inputmethod', inputmethod )
+					.addClass( 'ime-im selectable-row' )
+					.append( '<span class="ime-im-check"></span>', $imeItem );
+
+				if ( imeSelector.options.helpHandler ) {
+					$inputMethod.append( imeSelector.options.helpHandler.call( imeSelector, inputmethod ) );
+				}
+
 				$imeList.append( $inputMethod );
 			} );
 		},
 
 		helpLink: function () {
-			return $( '<div class="ime-help-link">' )
+			return $( '<div class="ime-help-link selectable-row">' )
 				.append( $( '<a>' ).text( 'Help' )
+					.addClass( 'selectable-row-item' )
 					.attr( {
 						'href': 'http://github.com/wikimedia/jquery.ime',
 						'target': '_blank',
@@ -546,7 +558,7 @@
 	}
 
 	function toggleMenuItem() {
-		return $( '<div class="ime-disable">' ).append(
+		return $( '<div class="ime-disable selectable-row">' ).append(
 			$( '<span>' )
 				.attr( {
 					'class': 'ime-disable-link',

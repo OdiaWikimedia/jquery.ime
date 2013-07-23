@@ -208,7 +208,7 @@ var testFixtures = [
 			{ input: '~O', output: 'Ö', description: 'German Ö' },
 			{ input: '~s', output: 'ß', description: 'German ß' }
 		],
-		inputmethod: 'de'
+		inputmethod: 'de-transliteration'
 	},{
 		description: 'Gujarati Transliteration',
 		tests: [
@@ -233,6 +233,10 @@ var testFixtures = [
 	},{
 		description: 'Hebrew layout and extended keys test',
 		tests: [
+			// The output is the LRM control character
+			{ input: [ [ '9', true ] ], output: '‎', description: 'Hebrew Alt-9 -> LRM' },
+			// The output is the RLM control character
+			{ input: [ [ '0', true ] ], output: '‏', description: 'Hebrew Alt-0 -> RLM' },
 			// The first case is a regular hyphen-minus ('-'), which is the same
 			// when it is pressed by itself without Alt.
 			// The second case is hyphen-minus with Alt, which produces the Hebrew
@@ -1035,6 +1039,12 @@ var testFixtures = [
 		],
 		inputmethod: 'kn-transliteration'
 	},{
+		description: 'Kannada InScript 2 test',
+		tests: [
+			{ input: [ [ '.', true ] ], output: '॥', description: 'Kannada InScript 2 AltGr-. -> ॥' }
+		],
+		inputmethod: 'kn-inscript2'
+	},{
 		description: 'Kajin M̧ajeļ (Marshallese) test',
 		tests: [
 			{ input: 'Y', output: 'Ū', description: 'Y for Ū in Marshallese' },
@@ -1055,6 +1065,17 @@ var testFixtures = [
 			{ input: 'v', output: 'ļ', description: 'v for ļ in Marshallese' }
 		],
 		inputmethod: 'mh'
+	},{
+		description: 'Marathi Phonetic test',
+		tests: [
+			{
+				input: 'sfpes deta.',
+				output: 'स्पेस देता.',
+				description: 'Marathi phonetic "sfpes deta." -> "स्पेस देता." (bug 51285).'
+			},
+			{ input: '*', output: 'श्र', description: 'Marathi phonetic * -> श्र' }
+		],
+		inputmethod: 'mr-phonetic'
 	},{
 		description: 'Marathi InScript 2 test',
 		tests: [
@@ -1395,6 +1416,12 @@ var testFixtures = [
 		],
 		inputmethod: 'ta-inscript'
 	},{
+		description: 'Tamil InScript 2 test',
+		tests: [
+			{ input: [ [ '.', true ] ], output: '॥', description: 'Tamil InScript 2 AltGr-. -> ॥' }
+		],
+		inputmethod: 'ta-inscript2'
+	},{
 		description: 'Tamil Transliteration test',
 		tests: [
 			//(ks|KS)h should give non-conjunct form of ksh க்‌ஷ் (with ZWNJ)
@@ -1535,6 +1562,89 @@ var testFixtures = [
 			{ input: 'ḶL', output: 'Ḹ', description: 'Sanskrit transliteration - ḶL -> Ḹ' }
 		],
 		inputmethod: 'sa-iast'
+	},{
+		description: 'Slovak keyboard test',
+		tests: [
+			{ input: '`', output: ';', description: "Slovak ` -> ;" },
+			{ input: '1', output: '+', description: "Slovak 1 -> +" },
+			{ input: '2', output: 'ľ', description: "Slovak 2 -> ľ" },
+			{ input: '3', output: 'š', description: "Slovak 3 -> š" },
+			{ input: '4', output: 'č', description: "Slovak 4 -> č" },
+			{ input: '5', output: 'ť', description: "Slovak 5 -> ť" },
+			{ input: '6', output: 'ž', description: "Slovak 6 -> ž" },
+			{ input: '7', output: 'ý', description: "Slovak 7 -> ý" },
+			{ input: '8', output: 'á', description: "Slovak 8 -> á" },
+			{ input: '9', output: 'í', description: "Slovak 9 -> í" },
+			{ input: '0', output: 'é', description: "Slovak 0 -> é" },
+			{ input: '-', output: '=', description: "Slovak - -> =" },
+			{ input: '=a', output: 'á', description: "Slovak =a -> á" },
+			{ input: '=E', output: 'É', description: "Slovak =E -> É" },
+			{ input: '=l', output: 'ĺ', description: "Slovak =l -> ĺ" },
+			{ input: '=L', output: 'Ĺ', description: "Slovak =L -> Ĺ" },
+			{ input: '=r', output: 'ŕ', description: "Slovak =r -> ŕ" },
+			{ input: '=R', output: 'Ŕ', description: "Slovak =R -> Ŕ" },
+			{
+				input: [ [ '3', true ], [ 'O', false ] ],
+				output: 'Ô',
+				description: "Slovak AltGr-3 + O -> Ô"
+			},
+			{
+				input: [ [ '=', true ], [ 'A', false ] ],
+				output: 'Ä',
+				description: "Slovak AltGr-= + A -> Ä"
+			},
+
+			{ input: '~', output: '°', description: "Slovak ~ -> °" },
+			{ input: '!', output: '1', description: "Slovak ! -> 1" },
+			{ input: '@', output: '2', description: "Slovak @ -> 2" },
+			{ input: '#', output: '3', description: "Slovak # -> 3" },
+			{ input: '$', output: '4', description: "Slovak $ -> 4" },
+			{ input: '%', output: '5', description: "Slovak % -> 5" },
+			{ input: '^', output: '6', description: "Slovak ^ -> 6" },
+			{ input: '&', output: '7', description: "Slovak & -> 7" },
+			{ input: '*', output: '8', description: "Slovak * -> 8" },
+			{ input: '(', output: '9', description: "Slovak ( -> 9" },
+			{ input: ')', output: '0', description: "Slovak ) -> 0" },
+			{ input: '_', output: '%', description: "Slovak _ -> %" },
+			{ input: '+c', output: 'č', description: "Slovak +c -> č" },
+			{ input: '+C', output: 'Č', description: "Slovak +c -> Č" },
+			{ input: '+d', output: 'ď', description: "Slovak +d -> ď" },
+			{ input: '+D', output: 'Ď', description: "Slovak +d -> Ď" },
+			{ input: '+l', output: 'ľ', description: "Slovak +l -> ľ" },
+			{ input: '+L', output: 'Ľ', description: "Slovak +l -> Ľ" },
+
+			// QWERTZ
+			{ input: 'y', output: 'z', description: 'Slovak y -> z' },
+			{ input: 'z', output: 'y', description: 'Slovak z -> y' },
+			{ input: 'Y', output: 'Z', description: 'Slovak Y -> Y' },
+			{ input: 'Z', output: 'Y', description: 'Slovak Z -> Z' },
+
+			{ input: 'p', output: 'p', description: 'Slovak p -> p' },
+			{ input: '[', output: 'ú', description: 'Slovak [ -> ú' },
+			{ input: ']', output: 'ä', description: 'Slovak ] -> ä' },
+			{ input: 'P', output: 'P', description: 'Slovak P -> P' },
+			{ input: '{', output: '/', description: 'Slovak { -> /' },
+			{ input: '}', output: '(', description: 'Slovak } -> (' },
+
+			{ input: 'l', output: 'l', description: 'Slovak l -> l' },
+			{ input: ';', output: 'ô', description: 'Slovak ; -> ô' },
+			{ input: "'", output: '§', description: "Slovak ' -> §" },
+			{ input: '\\', output: 'ň', description: 'Slovak \ -> ň' },
+			{ input: 'L', output: 'L', description: 'Slovak L -> L' },
+			{ input: ':', output: '"', description: 'Slovak : -> "' },
+			{ input: '"', output: '!', description: 'Slovak " -> !' },
+			{ input: '|', output: ')', description: 'Slovak | -> )' },
+
+			{ input: 'm', output: 'm', description: 'Slovak m -> m' },
+			{ input: ',', output: ',', description: 'Slovak , -> ,' },
+			{ input: '.', output: '.', description: 'Slovak . -> .' },
+			{ input: '/', output: '-', description: 'Slovak / -> -' },
+			{ input: 'M', output: 'M', description: 'Slovak M -> M' },
+			{ input: '<', output: '?', description: 'Slovak < -> ?' },
+			{ input: '>', output: ':', description: 'Slovak > -> :' },
+			{ input: '?', output: '_', description: 'Slovak ? -> _' }
+		],
+		inputmethod: 'sk-kbd'
 	},{
 		description: 'Sanskrit transliteration test',
 		tests: [
